@@ -4,7 +4,9 @@ using Org.BouncyCastle.Tls.Crypto.Impl.BC;
 using PL;
 using System;
 using System.Data;
+using System.Net.Sockets;
 using System.Text;
+using System.Threading;
 
 namespace VtcGamingCenter
 {
@@ -12,7 +14,7 @@ namespace VtcGamingCenter
     {
         static void Main(string[] args)
         {
-            string connectionString = "server=localhost;user=root;password=loc2005;database=quanlyquannet";
+            string connectionString = "server=localhost;user=root;password=16Ad8853758816;database=quanlyquannet";
             Database database = new Database(connectionString);
 
             UserRepository userRepository = new UserRepository(database);
@@ -23,9 +25,12 @@ namespace VtcGamingCenter
 
             ComputerRepository computerRepository = new ComputerRepository(database);
             ComputerManager computerManager = new ComputerManager(computerRepository);
-            
+
+
             TransactionRepository transactionRepository = new TransactionRepository(database);
-            TransactionManager transactionManager = new TransactionManager(transactionRepository,serviceManager);
+            TransactionManager transactionManager = new TransactionManager(transactionRepository, serviceManager);
+
+
 
             Menu menu = new Menu();
             Console.OutputEncoding = Encoding.UTF8;
@@ -35,6 +40,9 @@ namespace VtcGamingCenter
             int chonMenuManagerComputers = -1;
             int chonMenuManagerServices = -1;
             int chonMenuUsers = -1;
+            string computerName = string.Empty;
+            string userName = string.Empty;
+            decimal total_amount = 0;
             do
             {
                 while (true)
@@ -171,7 +179,7 @@ namespace VtcGamingCenter
                                                             Console.WriteLine("+-------------------------------+");
                                                             Console.WriteLine("| Bạn đang ở chức năng nạp tiền |");
                                                             Console.WriteLine("+-------------------------------+");
-                                                            AddMoney(userManager);
+                                                            AddMoney(userManager, ref total_amount);
                                                             break;
                                                         }
                                                     case 7:
@@ -307,6 +315,7 @@ namespace VtcGamingCenter
                                                             Console.WriteLine("+-----+");
                                                             Console.WriteLine("| Xoá |");
                                                             Console.WriteLine("+-----+");
+                                                            ViewServices(serviceManager);
                                                             DeleteServices(serviceManager);
                                                             break;
                                                         }
@@ -372,7 +381,7 @@ namespace VtcGamingCenter
                                             Console.WriteLine("+---------------------------------------+");
                                             Console.WriteLine("| Bạn đang ở chức năng báo cáo thống kê |");
                                             Console.WriteLine("+---------------------------------------+");
-                                            ThongKeHoaDon(transactionManager);
+                                            ThongKeHoaDon(transactionManager, total_amount);
                                             break;
                                         }
                                     case 6:
@@ -380,9 +389,47 @@ namespace VtcGamingCenter
                                             Console.WriteLine("+--------------------------+");
                                             Console.WriteLine("| Kênh chat với khách hàng |");
                                             Console.WriteLine("+--------------------------+");
-                                            Server server = new Server();
-                                            server.StartServer("127.0.0.1", 8888); // Địa chỉ IP và cổng của server
-                                            serverApp.Start();
+
+                                            TcpListener server = new TcpListener(System.Net.IPAddress.Any, 5000);
+                                            server.Start();
+                                            Console.WriteLine("[*] Server started");
+
+                                            CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
+
+                                            Console.WriteLine("[*] Press 0 to cancel or any other key to wait for connection...");
+                                            while (!Console.KeyAvailable || Console.ReadKey(true).KeyChar != '0')
+                                            {
+                                                if (server.Pending())
+                                                {
+                                                    TcpClient client = server.AcceptTcpClient();
+                                                    Console.WriteLine("[*] Client connected");
+
+                                                    NetworkStream stream = client.GetStream();
+                                                    Thread receiveThread = new Thread(() => ReceiveMessagesServer(stream, cancellationTokenSource.Token, computerName));
+                                                    receiveThread.Start();
+
+                                                    while (true)
+                                                    {
+                                                        string messageToSend = Console.ReadLine();
+                                                        if (messageToSend.ToLower() == "exit")
+                                                        {
+                                                            cancellationTokenSource.Cancel(); // Request cancellation of the receive thread
+                                                            break;
+                                                        }
+                                                        byte[] data = Encoding.UTF8.GetBytes(messageToSend);
+                                                        stream.Write(data, 0, data.Length);
+                                                    }
+
+                                                    // Cleanly close the connection
+                                                    stream.Close();
+                                                    client.Close();
+                                                    receiveThread.Join();
+                                                    break;
+                                                }
+                                            }
+
+                                            server.Stop();
+                                            Console.WriteLine("[*] Server stopped");
                                             break;
                                         }
                                     default:
@@ -404,10 +451,9 @@ namespace VtcGamingCenter
 
                             Console.WriteLine("\n Bạn cần đăng nhập để tiếp tục!\n");
                             int userID = 0;
-                            string userName = string.Empty;
-                            string computerName = string.Empty;
 
-                            LoginUsers(computerManager,ref computerName, userManager, ref userName,ref userID);
+                            ViewAllComputers(computerManager);
+                            LoginUsers(computerManager, ref computerName, userManager, ref userName, ref userID);
 
                             do
                             {
@@ -429,14 +475,14 @@ namespace VtcGamingCenter
                                 {
                                     case 0:
                                         {
-                                            Logout(computerManager,userManager, userName,computerName);
+                                            Logout(computerManager, userManager, userName, computerName);
                                             break;
                                         }
                                     case 1:
                                         {
                                             Console.WriteLine("Quản lí thông tin");
                                             int ChonQuanLiThongTinKhach = -1;
-                                            
+
                                             do
                                             {
                                                 while (true)
@@ -463,7 +509,7 @@ namespace VtcGamingCenter
                                                     case 1:
                                                         {
                                                             Console.WriteLine("Bạn đang ở chức năng hiển thị thông tin khách hàng ");
-                                                            ThongTinKhachHang(userManager,userName,computerName);
+                                                            ThongTinKhachHang(userManager, userName, computerName);
                                                             break;
                                                         }
                                                     case 2:
@@ -512,14 +558,14 @@ namespace VtcGamingCenter
                                                     case 2:
                                                         {
                                                             Console.WriteLine("Hiển thị các sản phẩm đã mua!");
-                                                            HienThiHoaDon(transactionManager,userID);
+                                                            HienThiHoaDon(transactionManager, userID);
                                                             break;
                                                         }
-                                                        case 3:
+                                                    case 3:
                                                         {
                                                             Console.WriteLine("Mua đồ");
                                                             ViewServices(serviceManager);
-                                                            ThemHoaDon(transactionManager,userID,computerName);
+                                                            ThemHoaDon(transactionManager, userID, computerName);
                                                             break;
                                                         }
                                                 }
@@ -536,9 +582,46 @@ namespace VtcGamingCenter
                                     case 4:
                                         {
                                             Console.WriteLine("Nhắn tin với nhân viên");
-                                            string IpSever = "127.0.0.1";
-                                            ClientApp clientApp = new ClientApp(IpSever);
-                                            clientApp.Start();
+
+                                            CancellationTokenSource cancellationTokenSource = new CancellationTokenSource();
+
+                                            Console.WriteLine("[*] Press 0 to cancel or any other key to connect to server...");
+                                            while (!Console.KeyAvailable || Console.ReadKey(true).KeyChar != '0')
+                                            {
+                                                try
+                                                {
+                                                    TcpClient client = new TcpClient("127.0.0.1", 5000);
+                                                    NetworkStream stream = client.GetStream();
+                                                    Console.WriteLine("[*] Connected to server");
+
+                                                    Thread receiveThread = new Thread(() => ReceiveMessagesClient(stream, cancellationTokenSource.Token));
+                                                    receiveThread.Start();
+
+                                                    while (true)
+                                                    {
+                                                        string messageToSend = Console.ReadLine();
+                                                        if (messageToSend.ToLower() == "exit")
+                                                        {
+                                                            cancellationTokenSource.Cancel(); // Request cancellation of the receive thread
+                                                            break;
+                                                        }
+                                                        byte[] data = Encoding.UTF8.GetBytes(messageToSend);
+                                                        stream.Write(data, 0, data.Length);
+                                                    }
+
+                                                    // Cleanly close the connection
+                                                    stream.Close();
+                                                    client.Close();
+                                                    receiveThread.Join();
+                                                    break;
+                                                }
+                                                catch (SocketException)
+                                                {
+                                                    // Retry connection
+                                                }
+                                            }
+
+                                            Console.WriteLine("[*] Client stopped");
                                             break;
                                         }
                                     default:
@@ -562,7 +645,7 @@ namespace VtcGamingCenter
 
             } while (chonNguoiDung != 0);
         }
-        static void LoginUsers(ComputerManager computerManager,ref string computerName, UserManager userManager, ref string userName,ref int userID)
+        static void LoginUsers(ComputerManager computerManager, ref string computerName, UserManager userManager, ref string userName, ref int userID)
         {
             bool loginSucceeded = false;
             int SoLanDangNhapFailed = 0;
@@ -694,14 +777,14 @@ namespace VtcGamingCenter
                 Console.WriteLine("+--------------------+");
             }
         }
-        static void Logout(ComputerManager computerManager, UserManager userManager, string username,string computerName)
+        static void Logout(ComputerManager computerManager, UserManager userManager, string username, string computerName)
         {
 
             User user = new User();
             user.username = username;
             user.status = "offline";
 
-            Computer computer = new Computer(); 
+            Computer computer = new Computer();
             computer.computer_name = computerName;
             computer.status = "available";
             computerManager.UpdateComputers(computer);
@@ -717,7 +800,7 @@ namespace VtcGamingCenter
 
 
         }
-        static void DoiMatKhauKhachHang(UserManager userManager,string userName)
+        static void DoiMatKhauKhachHang(UserManager userManager, string userName)
         {
             User user = new User();
             user.username = userName;
@@ -918,7 +1001,7 @@ namespace VtcGamingCenter
             }
             else
             {
-                Console.WriteLine($"không có người dùng với tên :{0} ", username);
+                Console.WriteLine($"không có người dùng với tên :{username} ");
             }
             Console.WriteLine("+------------------------------+");
             Console.WriteLine("| Press any key to continue... |");
@@ -952,7 +1035,7 @@ namespace VtcGamingCenter
             Console.WriteLine("+------------------------------+");
             Console.ReadKey();
         }
-        static void AddMoney(UserManager userManager)
+        static void AddMoney(UserManager userManager, ref decimal total_amount)
         {
             User user = new User();
             Console.Write("Nhập vào tên tài khoản cần nạp tiền : ");
@@ -975,11 +1058,12 @@ namespace VtcGamingCenter
                 }
 
             } while (!validInput);
-            if (userManager.AddMoney(user,amount))
+            if (userManager.AddMoney(user, amount))
             {
                 Console.WriteLine("+------------------------+");
                 Console.WriteLine("| Add Money successfully |");
                 Console.WriteLine("+------------------------+");
+                total_amount += amount;
             }
             else
             {
@@ -988,12 +1072,14 @@ namespace VtcGamingCenter
                 Console.WriteLine("+---------------------+");
 
             }
+
             Console.WriteLine("+------------------------------+");
             Console.WriteLine("| Press any key to continue... |");
             Console.WriteLine("+------------------------------+");
             Console.ReadKey();
+
         }
-        static void AddMoneyFromCustomer(UserManager userManager,string userName)
+        static void AddMoneyFromCustomer(UserManager userManager, string userName)
         {
             User user = new User();
             user.username = userName;
@@ -1312,8 +1398,9 @@ namespace VtcGamingCenter
         static void DeleteServices(ServiceManager serviceManager)
         {
             Service service = new Service();
-            Console.WriteLine("Nhập vào dịch vụ cần xoá: ");
-            service.service_name = Console.ReadLine();
+            Console.Write("Nhập vào tên dịch vụ cần xoá: ");
+            string service_name = Console.ReadLine();
+            service.service_name = service_name;
 
             if (serviceManager.DeleteServices(service))
             {
@@ -1323,7 +1410,7 @@ namespace VtcGamingCenter
             }
             else
             {
-                Console.WriteLine($"không có dịch vụ với tên : {0} ", service.service_name);
+                Console.WriteLine($"không có dịch vụ với tên : {service_name} ");
             }
             Console.WriteLine("+------------------------------+");
             Console.WriteLine("| Press any key to continue... |");
@@ -1344,12 +1431,12 @@ namespace VtcGamingCenter
                 Console.WriteLine("+------------+-------------------+-------------------+----------------+");
 
             }
-            
+
         }
         static void SearchServices(ServiceManager serviceManager)
         {
             Service service = new Service();
-            Console.Write("Nhập vào tên sản phẩm cần tìm kiếm");
+            Console.Write("Nhập vào tên sản phẩm cần tìm kiếm: ");
             service.service_name = Console.ReadLine();
 
             DataTable result = serviceManager.SearchServices(service);
@@ -1368,9 +1455,9 @@ namespace VtcGamingCenter
             Console.WriteLine("+------------------------------+");
             Console.ReadKey();
         }
-        static void ThongTinKhachHang(UserManager userManager,string userName,string computerName)
+        static void ThongTinKhachHang(UserManager userManager, string userName, string computerName)
         {
-            
+
             DataTable result = userManager.SearchUsers(userName);
             foreach (DataRow row in result.Rows)
             {
@@ -1385,7 +1472,7 @@ namespace VtcGamingCenter
             }
 
         }
-        static void ThemHoaDon(TransactionManager transactionsManager,int userID,string ComputerName)
+        static void ThemHoaDon(TransactionManager transactionsManager, int userID, string ComputerName)
         {
             Transactions transactions = new Transactions();
             transactions.user_id = userID;
@@ -1430,12 +1517,12 @@ namespace VtcGamingCenter
             }
 
         }
-        static void HienThiHoaDon(TransactionManager transactionManager,int userID)
+        static void HienThiHoaDon(TransactionManager transactionManager, int userID)
         {
             Transactions transactions = new Transactions();
             transactions.user_id = userID;
             DataTable result = transactionManager.HienThiHoaDon(transactions);
-            foreach(DataRow row in result.Rows)
+            foreach (DataRow row in result.Rows)
             {
                 Console.WriteLine("+=======[ Hoá đơn ]=======+");
                 Console.WriteLine($"ID giao dịch : {row["transaction_id"]}");
@@ -1469,12 +1556,14 @@ namespace VtcGamingCenter
             {
                 Console.Write("Nhập vào ID giao dịch đã hoàn thành để hoàn thành đơn: ");
                 string input = Console.ReadLine();
+
                 if (int.TryParse(input, out transactions_id))
                 {
                     break; // Thoát vòng lặp khi người dùng nhập đúng số nguyên
                 }
                 else
                 {
+
                     Console.WriteLine("Giá trị không hợp lệ. Vui lòng nhập lại.");
                 }
             }
@@ -1512,22 +1601,76 @@ namespace VtcGamingCenter
             Console.WriteLine("+------------------------------+");
             Console.ReadKey();
         }
-        static void ThongKeHoaDon(TransactionManager transactionManager)
+        static void ThongKeHoaDon(TransactionManager transactionManager, decimal total_amount)
         {
             decimal amount = 0;
             DataTable result = transactionManager.ThongKeHoaDon();
-            foreach(DataRow row in result.Rows)
+            foreach (DataRow row in result.Rows)
             {
                 if (row["total_price"] != DBNull.Value)
                 {
                     amount += Convert.ToDecimal(row["total_price"]);
                 }
             }
-            Console.WriteLine($"Tổng tiền đã thu: {amount} vnđ ");
+            Console.WriteLine($"Tổng tiền nạp tài khoản đã thu:{total_amount} vnđ");
+            Console.WriteLine($"Tổng tiền dịch vụ đã thu: {amount} vnđ ");
         }
+
+        static void ReceiveMessagesClient(NetworkStream stream, CancellationToken cancellationToken)
+        {
+            byte[] buffer = new byte[1024];
+            int bytesRead;
+
+            try
+            {
+                while (!cancellationToken.IsCancellationRequested && (bytesRead = stream.Read(buffer, 0, buffer.Length)) != 0)
+                {
+                    string receivedMessage = Encoding.UTF8.GetString(buffer, 0, bytesRead);
+                    Console.WriteLine("Nhân viên : " + receivedMessage);
+                }
+            }
+            catch (IOException ex)
+            {
+                Console.WriteLine("Kết nối đã bị đóng bởi máy chủ: " + ex.Message);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Đã xảy ra lỗi: " + ex.Message);
+            }
+            finally
+            {
+                stream.Close();
+            }
+        }
+        static void ReceiveMessagesServer(NetworkStream stream, CancellationToken cancellationToken, string computerName)
+        {
+            byte[] buffer = new byte[1024];
+            int bytesRead;
+
+            try
+            {
+                while (!cancellationToken.IsCancellationRequested && (bytesRead = stream.Read(buffer, 0, buffer.Length)) != 0)
+                {
+                    string receivedMessage = Encoding.UTF8.GetString(buffer, 0, bytesRead);
+                    Console.WriteLine($"máy {computerName} : " + receivedMessage);
+                }
+            }
+            catch (IOException ex)
+            {
+                Console.WriteLine("Kết nối đã bị đóng bởi máy khách: " + ex.Message);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine("Đã xảy ra lỗi: " + ex.Message);
+            }
+            finally
+            {
+                stream.Close();
+            }
+        }
+
     }
 }
 
 
 
-    

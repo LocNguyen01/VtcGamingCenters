@@ -30,55 +30,61 @@ namespace PL
         }
         public void MenuManagerUsers()
         {
-            Console.WriteLine(" Quản lí người dùng ");
-            Console.WriteLine(" 0.Quay lại");
-            Console.WriteLine(" 1.Thêm");
-            Console.WriteLine(" 2.Hiển thị");
-            Console.WriteLine(" 3.Sửa");
-            Console.WriteLine(" 4.Xoá");
-            Console.WriteLine(" 5.Tìm kiếm");
-            Console.WriteLine(" 6.Nạp tiền");
-            Console.WriteLine(" 7.Trừ tiền");
+            Console.WriteLine("+=====[ Quản lí người dùng ]=====+"); 
+            Console.WriteLine("| 0.Quay lại                     |");
+            Console.WriteLine("| 1.Thêm                         |");
+            Console.WriteLine("| 2.Hiển thị                     |");
+            Console.WriteLine("| 3.Sửa                          |");
+            Console.WriteLine("| 4.Xoá                          |");
+            Console.WriteLine("| 5.Tìm kiếm                     |");
+            Console.WriteLine("| 6.Nạp tiền                     |");
+            Console.WriteLine("| 7.Trừ tiền                     |");
+            Console.WriteLine("+--------------------------------+");
 
         }
         public void MenuMangagerComputers()
         {
-            Console.WriteLine("Quản lí máy tính");
-            Console.WriteLine("0.Quay lại");
-            Console.WriteLine("1.Hiển thị");
-            Console.WriteLine("2.Bảo trì máy tính");
-            Console.WriteLine("3.Tìm kiếm");
+            Console.WriteLine("+=====[ Quản lí máy tính ]=====+");
+            Console.WriteLine("| 0.Quay lại                   |");
+            Console.WriteLine("| 1.Hiển thị                   |");
+            Console.WriteLine("| 2.Bảo trì máy tính           |");
+            Console.WriteLine("| 3.Tìm kiếm                   |");
+            Console.WriteLine("+------------------------------+");
         }
         public void menuBaoTriMayTinh()
         {
-            Console.WriteLine("bao tri may tinh (trong quan li may tinh)");
-            Console.WriteLine("0.Quay lại");
-            Console.WriteLine("1.Bảo trì máy tính");
-            Console.WriteLine("2.Đóng bảo trì");
+            Console.WriteLine("+=====[ Bảo trì máy tính ]=====+");
+            Console.WriteLine("| 0.Quay lại                   |");  
+            Console.WriteLine("| 1.Bảo trì máy tính           |");
+            Console.WriteLine("| 2.Đóng bảo trì               |");
+            Console.WriteLine("+------------------------------+");
         }
         public void MenuManagerServices()
         {
-            Console.WriteLine("menu quan li dich vi");
-            Console.WriteLine("0.Quay lại");
-            Console.WriteLine("1.Thêm");
-            Console.WriteLine("2.Hiển thị");
-            Console.WriteLine("3.Sửa");
-            Console.WriteLine("4.Xoá");
-            Console.WriteLine("5.Tìm kiếm");
+            Console.WriteLine("+=====[ Quản lí dịch vụ ]=====+");
+            Console.WriteLine("| 0.Quay lại                  |");
+            Console.WriteLine("| 1.Thêm                      |");
+            Console.WriteLine("| 2.Hiển thị                  |");
+            Console.WriteLine("| 3.Sửa                       |");
+            Console.WriteLine("| 4.Xoá                       |");
+            Console.WriteLine("| 5.Tìm kiếm                  |");
+            Console.WriteLine("+-----------------------------+");
 
         }
         public void MenuManagerPayments()
         {
-            Console.WriteLine("quarn li thanh toasn");
-            Console.WriteLine("0.Quay lại");
-            Console.WriteLine("1.Hiển thị các máy cần duyệt đơn");
-            Console.WriteLine("2.Hiển thị các máy đã duyệt đơn");
+            Console.WriteLine("+=======[ Quản lí thanh toán ]=======+");
+            Console.WriteLine("| 0.Quay lại                         |");
+            Console.WriteLine("| 1.Hiển thị các máy cần duyệt đơn   |");
+            Console.WriteLine("| 2.Hiển thị các máy đã duyệt đơn    |");
+            Console.WriteLine("+------------------------------------+");
         }
         public void MenuReports()
         {
-            Console.WriteLine("báo cáo");
-            Console.WriteLine("0.Quay lại");
-            Console.WriteLine("1.Hiển thị báo cáo hôm nay");
+            Console.WriteLine("+=====[ Báo cáo thống kê ]=====+");
+            Console.WriteLine("| 0.Quay lại                   |");
+            Console.WriteLine("| 1.Hiển thị báo cáo hôm nay   |");
+            Console.WriteLine("+------------------------------+");
         }
         public void MenuKhachHang()
         {
@@ -93,18 +99,20 @@ namespace PL
         }
         public void QuanLiThongTinKhach()
         {
-            Console.WriteLine("Quan li thong tin khach hang");
-            Console.WriteLine("0.Quay lại");
-            Console.WriteLine("1.Hiển thị thông tin cá nhân");
-            Console.WriteLine("2.Đổi mật khẩu");
+            Console.WriteLine("+======[ Thông tin cá nhân ]======+");
+            Console.WriteLine("| 0.Quay lại                      |");
+            Console.WriteLine("| 1.Hiển thị thông tin cá nhân    |");
+            Console.WriteLine("| 2.Đổi mật khẩu                  |");
+            Console.WriteLine("+---------------------------------+");
         }
         public void MuaDo()
         {
-            Console.WriteLine("Menu mua do");
-            Console.WriteLine("0.Quay lại");
-            Console.WriteLine("1.Hiển thị danh sách sản phẩm");
-            Console.WriteLine("2.Hiển thị danh sách sản phẩm đã mua");
-            Console.WriteLine("3.Mua sản phẩm");
+            Console.WriteLine("+=============[ Menu mua đồ ]=============+");
+            Console.WriteLine("| 0.Quay lại                              |");
+            Console.WriteLine("| 1.Hiển thị danh sách sản phẩm           |");
+            Console.WriteLine("| 2.Hiển thị danh sách sản phẩm đã mua    |");
+            Console.WriteLine("| 3.Mua sản phẩm                          |");
+            Console.WriteLine("+-----------------------------------------+");
         }
     }
 }
